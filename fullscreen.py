@@ -160,9 +160,27 @@ class InteractiveCubeApp:
         self.selected_vertex = None
         self.textures = {}
         self.video_players = {}  
-        self.zoom = -6.0  # Zoom inicial
+        self.zoom = -6.0  
         self.image_paths = {'frente':'cover.png'}
-        self.video_path = {'arriba':'video.mp4','derecha':'mish.mp4'}
+        self.video_path = {
+            'arriba': 'video.mp4',
+            'derecha': 'mish.mp4'  
+        }
+        self.right_video_list = ['mish.mp4', 'mish2.gif', 'mish3.gif','mish4.gif']
+        self.right_video_index = 0
+
+    def toggle_video(self):
+        self.right_video_index = (self.right_video_index + 1) % len(self.right_video_list)
+        new_path = self.right_video_list[self.right_video_index]
+        self.video_path['derecha'] = new_path
+        self.video_players['derecha'].release()
+        self.video_players['derecha'] = VideoPlayer(new_path)
+
+
+
+    def key_callback(self, window, key, scancode, action, mods):
+        if key == glfw.KEY_SPACE and action == glfw.PRESS:
+            self.toggle_video()
 
     def init_glfw(self):
         if not glfw.init():
@@ -187,6 +205,7 @@ class InteractiveCubeApp:
         glfw.set_mouse_button_callback(self.window, self.mouse_button_callback)
         glfw.set_cursor_pos_callback(self.window, self.mouse_motion_callback)
         glfw.set_scroll_callback(self.window, self.scroll_callback)
+        glfw.set_key_callback(self.window, self.key_callback)
         glfw.set_framebuffer_size_callback(self.window, self.framebuffer_size_callback)
         glEnable(GL_DEPTH_TEST)
         glClearColor(0.0, 0.0, 0.0, 1.0)
