@@ -152,26 +152,32 @@ class InteractiveCubeApp:
         self.height = height
         glViewport(0, 0, width, height)
 
-    def __init__(self, width=800, height=600):
+    def __init__(self, width=1920, height=1080):
         self.width = width
         self.height = height
         self.window = None
         self.cube = Cube()
         self.selected_vertex = None
         self.textures = {}
-        self.video_player = None
+        self.video_players = {}  
         self.zoom = -6.0  # Zoom inicial
-        self.image_paths = {'frente':'cover.png','derecha':'cover.png'}
-        self.video_path = 'video.mp4'
+        self.image_paths = {'frente':'cover.png'}
+        self.video_path = {'arriba':'video.mp4','derecha':'mish.mp4'}
 
     def init_glfw(self):
         if not glfw.init():
             raise RuntimeError("No se pudo inicializar GLFW")
+        monitor = glfw.get_primary_monitor()
+        mode = glfw.get_video_mode(monitor)
+
+        self.width = mode.size.width
+        self.height = mode.size.height
+
         self.window = glfw.create_window(
             self.width,
             self.height,
             "Cubo 3D Interactivo",
-            None,
+            None,  # <- ventana normal
             None
         )
         if not self.window:
@@ -188,7 +194,8 @@ class InteractiveCubeApp:
     def load_resources(self):
         for face, path in self.image_paths.items():
             self.textures[face] = Texture(path)
-        self.video_player = VideoPlayer(self.video_path)
+        for face, path in self.video_path.items():
+            self.video_players[face] = VideoPlayer(path)
 
     def mouse_button_callback(self, window, button, action, mods):
         if button == glfw.MOUSE_BUTTON_LEFT:
@@ -233,11 +240,15 @@ class InteractiveCubeApp:
     def render(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.setup_proj()
-        self.video_player.update()
+        
         self.cube.draw_face('frente', self.textures['frente'])
-        self.cube.draw_face('derecha', self.textures['derecha'])
-        self.cube.draw_face('arriba', self.video_player)
-        self.cube.draw_vertices()
+        for vp in self.video_players.values():
+            vp.update()
+
+        self.cube.draw_face('frente', self.textures['frente'])
+        self.cube.draw_face('derecha', self.video_players['derecha'])
+        self.cube.draw_face('arriba', self.video_players['arriba'])
+        #self.cube.draw_vertices()
 
     def run(self):
         try:
@@ -251,8 +262,8 @@ class InteractiveCubeApp:
             self.cleanup()
 
     def cleanup(self):
-        if self.video_player:
-            self.video_player.release()
+        for vp in self.video_players.values():
+            vp.release()
         glDeleteTextures([t.id for t in self.textures.values()])
         if self.window:
             glfw.destroy_window(self.window)
